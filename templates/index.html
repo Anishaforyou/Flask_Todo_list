@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Todo List</title>
+  <style>
+    :root {
+      --deep-blue: #0d47a1;
+      --light-blue: #87cefa;
+      --white: #ffffff;
+      --green: #2e7d32;
+      --red: #c62828;
+      --card-bg: rgba(255,255,255,0.95);
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, var(--white), var(--light-blue));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 780px;
+      background: var(--card-bg);
+      border-radius: 18px;
+      box-shadow: 0 10px 35px rgba(8, 30, 60, 0.15);
+      padding: 28px;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--deep-blue);
+      margin: 0 0 24px 0;
+      font-size: 2.2rem;
+      font-weight: 700;
+    }
+
+    h2 {
+      margin: 25px 0 15px;
+      color: var(--deep-blue);
+      font-size: 1.3rem;
+      border-bottom: 2px solid #dce3eb;
+      padding-bottom: 4px;
+    }
+
+    form.add-form {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"], input[type="datetime-local"] {
+      padding: 12px 14px;
+      border: 1px solid #cfd8dc;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      flex: 1;
+      outline: none;
+      transition: box-shadow 0.3s;
+    }
+    input:focus {
+      box-shadow: 0 0 8px rgba(13, 71, 161, 0.4);
+    }
+
+    .datetime-input { max-width: 240px; flex: 0 0 240px; }
+
+    button {
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .btn-add { background: var(--green); color: white; }
+    .btn-complete { background: var(--green); color: white; margin-right: 8px; }
+    .btn-delete { background: var(--red); color: white; }
+
+    ul.tasks { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+
+    li.task {
+      padding: 14px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #f8fbff, #eef7ff);
+      box-shadow: 0 3px 10px rgba(12, 35, 68, 0.08);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    li.task:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 20px rgba(12,35,68,0.18);
+    }
+
+    li.task.overdue {
+      background: #fff0f0;
+      border-left: 5px solid var(--red);
+      position: relative;
+    }
+    li.task.overdue::before {
+      content: "🔔";
+      position: absolute;
+      top: 10px; right: 12px;
+      font-size: 1.2rem;
+      color: var(--red);
+    }
+
+    .task-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .task-text { font-size: 1rem; color: #0b2a4a; flex: 1; }
+    .task-text.completed { text-decoration: line-through; opacity: 0.6; }
+
+    .meta { margin-top: 8px; font-size: 0.85rem; color: #344955; }
+    .meta .due-red { color: var(--red); font-weight: 700; }
+
+    .controls { display: flex; gap: 8px; flex-shrink: 0; }
+
+    @media (max-width: 720px) {
+      .container { padding: 18px; }
+      form.add-form { flex-direction: column; }
+      .datetime-input { width: 100%; }
+      .controls { width: 100%; justify-content: flex-end; }
+      .task-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .task-row .controls { align-self: flex-end; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Todo List</h1>
+
+    <form class="add-form" action="{{ url_for('add_task') }}" method="POST">
+      <input type="text" name="content" placeholder="Enter new task..." required />
+      <input class="datetime-input" type="datetime-local" name="due_at" />
+      <button type="submit" class="btn-add">Add</button>
+    </form>
+
+    {% if overdue_tasks %}
+    <h2>⏰ Overdue Tasks</h2>
+    <ul class="tasks">
+      {% for task in overdue_tasks %}
+      <li class="task overdue">
+        <div class="task-row">
+          <div class="task-text {% if task.completed %}completed{% endif %}">{{ task.content }}</div>
+          <div class="controls">
+            <a href="{{ url_for('complete_task', task_id=task.id) }}">
+              <button class="btn-complete" type="button">{% if task.completed %}Undo{% else %}Complete{% endif %}</button>
+            </a>
+            <a href="{{ url_for('delete_task', task_id=task.id) }}">
+              <button class="btn-delete" type="button">Delete</button>
+            </a>
+          </div>
+        </div>
+        <div class="meta">
+          📝 Created: {{ task.created_str }}
+          {% if task.due_str %}
+            • ⏳ Due: <span class="due-red">{{ task.due_str }}</span>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if normal_tasks %}
+    <h2>✅ Pending / Completed Tasks</h2>
+    <ul class="tasks">
+      {% for task in normal_tasks %}
+      <li class="task {% if task.overdue %}overdue{% endif %}">
+        <div class="task-row">
+          <div class="task-text {% if task.completed %}completed{% endif %}">{{ task.content }}</div>
+          <div class="controls">
+            <a href="{{ url_for('complete_task', task_id=task.id) }}">
+              <button class="btn-complete" type="button">{% if task.completed %}Undo{% else %}Complete{% endif %}</button>
+            </a>
+            <a href="{{ url_for('delete_task', task_id=task.id) }}">
+              <button class="btn-delete" type="button">Delete</button>
+            </a>
+          </div>
+        </div>
+        <div class="meta">
+          📝 Created: {{ task.created_str }}
+          {% if task.due_str %}
+            • ⏳ Due: <span>{{ task.due_str }}</span>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</body>
+</html>
