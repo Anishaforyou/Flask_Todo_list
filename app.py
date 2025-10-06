@@ -63,7 +63,10 @@ def index():
     # ✅ Overdue tasks appear on top
     tasks_sorted = sorted(tasks, key=lambda x: (not x["overdue"], x["created_str"]))
 
-    return render_template('index.html', tasks=tasks_sorted)
+    overdue_tasks = [t for t in tasks_sorted if t["overdue"]]
+    normal_tasks = [t for t in tasks_sorted if not t["overdue"]]
+    
+    return render_template('index.html', overdue_tasks=overdue_tasks, normal_tasks=normal_tasks)
 
 @app.route('/add', methods=['POST'])
 def add_task():
